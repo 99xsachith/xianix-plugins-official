@@ -69,9 +69,11 @@ This plugin focuses on **user experience** — intent, context, domain, and risk
 1. Header (Issue number, title, type, verdict)
 2. Summary (with intent decomposition table)
 3. User Context & Workflow
-4. Domain Context
-5. Gaps & Unresolved Questions
-6. Risks, Dependencies & Assumptions
+4. User Journey (if cross-issue context adds insight)
+5. Personas (if multiple user types are relevant)
+6. Domain Context
+7. Gaps & Unresolved Questions
+8. Risks, Dependencies & Assumptions
 
 **Skip sections with no findings** rather than writing "None identified."
 

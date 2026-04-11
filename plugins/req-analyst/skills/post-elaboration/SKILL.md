@@ -1,54 +1,83 @@
 ---
 name: post-elaboration
-description: Post the elaborated requirement to a GitHub issue. Requires an issue number. Usage: /post-elaboration [issue-number]
-argument-hint: [issue-number]
+description: Post the elaborated requirement as comments on a backlog item (GitHub Issue or Azure DevOps Work Item). Each analysis aspect becomes a separate comment, preserving the original description. Usage: /post-elaboration [issue-number or work-item-id]
+argument-hint: [issue-number | work-item-id]
 ---
 
-Post the elaborated requirement to GitHub issue #$ARGUMENTS.
+Post the elaborated requirement as comments on item #$ARGUMENTS.
 
 Do not ask for confirmation at any point. Execute all steps autonomously and proceed immediately from one step to the next.
 
 ## Steps
 
-1. **Verify issue exists**
+1. **Detect platform**
 
-   Use `mcp__github__get_issue` with the given issue number to confirm it exists and retrieve its current state, title, and labels. If the issue does not exist or is already closed, stop and output a single error line — do not ask the user what to do.
-
-2. **Format the elaboration for GitHub**
-
-   - Prepare the full elaborated requirement as the issue body (or comment body if `--comment` flag is set)
-   - Map verdict to a GitHub label:
-
-     | Plugin verdict | GitHub label |
-     |---|---|
-     | `GROOMED` | `groomed` |
-     | `NEEDS CLARIFICATION` | `needs-clarification` |
-     | `NEEDS DECOMPOSITION` | `needs-decomposition` |
-
-3. **Post the elaboration**
-
-   **Default (update issue body):**
-   Use `mcp__github__update_issue` with:
-   - `issue_number`: the issue number
-   - `body`: the full elaborated requirement
-
-   **Comment mode (`--comment`):**
-   Use `mcp__github__create_issue_comment` with:
-   - `issue_number`: the issue number
-   - `body`: the full elaborated requirement
-
-   Then use `mcp__github__add_labels_to_issue` to apply the appropriate status label.
-
-   If unresolved questions exist, post each as a separate comment using `mcp__github__create_issue_comment`, tagging the relevant person (@creator or @product-owner).
-
-4. **Output result**
-
-   On completion, output a single summary line:
-
+   ```bash
+   git remote get-url origin
    ```
-   Elaboration posted on issue #<number>: <verdict> — <N> acceptance criteria — <N> unresolved questions
+   - Contains `github.com` → **GitHub**
+   - Contains `dev.azure.com` or `visualstudio.com` → **Azure DevOps**
+   - Anything else → **Generic** (write to file)
+
+2. **Verify item exists**
+
+   **GitHub:** Use `gh issue view` to confirm the issue exists and is open.
+
+   ```bash
+   gh issue view ${ISSUE_NUMBER} --json state
    ```
 
-   If any MCP call fails, output the error and stop — do not retry or ask for input.
+   **Azure DevOps:** Use `curl` to fetch the work item — see `providers/azure-devops.md`.
 
-> **Note:** Requires the GitHub MCP server to be connected. See `docs/mcp-config.md` for setup.
+   If the item does not exist or is already closed/completed, stop and output a single error line.
+
+3. **Post each aspect as a separate comment**
+
+   **Do not modify the item body.** Post each analysis aspect as its own comment, in this order:
+
+   | # | Comment | Heading |
+   |---|---------|---------|
+   | 1 | Summary & Verdict | `## 📋 Elaboration Summary` |
+   | 2 | Intent & User Context | `## 🔍 Intent & User Context` |
+   | 3 | User Journey | `## 🗺️ User Journey` |
+   | 4 | Personas | `## 👥 Personas` |
+   | 5 | Domain Context | `## 🏢 Domain Context` |
+   | 6 | Gaps, Risks & Dependencies | `## ⚠️ Gaps, Risks & Dependencies` |
+
+   Skip comments 3 and 4 if those sections have no findings.
+
+   **GitHub:** Use `gh issue comment`.
+
+   ```bash
+   gh issue comment ${ISSUE_NUMBER} --body "${COMMENT_BODY}"
+   ```
+
+   **Azure DevOps:** Use `curl` POST to the work item comments API — see `providers/azure-devops.md`.
+
+4. **Apply verdict label/tag**
+
+   **GitHub:** Use `gh issue edit`.
+
+   ```bash
+   gh issue edit ${ISSUE_NUMBER} --add-label "${VERDICT_LABEL}"
+   ```
+
+   **Azure DevOps:** Use `curl` PATCH to add the tag — see `providers/azure-devops.md`.
+
+   | Plugin verdict | GitHub label | Azure DevOps tag |
+   |---|---|---|
+   | `GROOMED` | `groomed` | `groomed` |
+   | `NEEDS CLARIFICATION` | `needs-clarification` | `needs-clarification` |
+   | `NEEDS DECOMPOSITION` | `needs-decomposition` | `needs-decomposition` |
+
+5. **Post unresolved questions**
+
+   Post each as a separate comment, tagging the relevant person.
+
+6. **Output result**
+
+   ```
+   Elaboration posted on issue #<number>: <verdict> — <N> comments — <N> unresolved questions
+   ```
+
+> **Note:** GitHub requires `gh` CLI installed and authenticated. Azure DevOps requires `AZURE_DEVOPS_TOKEN`. See `docs/platform-config.md` for setup.

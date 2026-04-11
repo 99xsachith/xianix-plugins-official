@@ -4,7 +4,7 @@ Use this provider when the git remote does not match GitHub or Azure DevOps — 
 
 ## Behaviour
 
-In generic mode the elaboration is **not posted to a remote platform**. Instead, the compiled report is written to a local file so it can be consumed by an external process, CI system, or human operator.
+In generic mode the elaboration is **not posted to a remote platform**. Instead, each analysis aspect is written to a local file as separate sections so it can be consumed by an external process, CI system, or human operator.
 
 ---
 
@@ -30,7 +30,33 @@ Verdict: GROOMED | NEEDS CLARIFICATION | NEEDS DECOMPOSITION
 
 ---
 
-<full compiled elaboration report body>
+## 📋 Elaboration Summary
+<summary and intent decomposition>
+
+---
+
+## 🔍 Intent & User Context
+<intent-analyst output>
+
+---
+
+## 🗺️ User Journey
+<journey-mapper output — omit if not applicable>
+
+---
+
+## 👥 Personas
+<persona-analyst output — omit if single persona>
+
+---
+
+## 🏢 Domain Context
+<domain-analyst output>
+
+---
+
+## ⚠️ Gaps, Risks & Dependencies
+<gap-risk-analyst output>
 ```
 
 ---
@@ -54,4 +80,3 @@ This provider is the correct fallback for:
 - Self-hosted issue trackers
 - Local or offline runs where no remote API is available
 - CI environments where only the report file output is needed
-```

@@ -4,56 +4,119 @@ Use this provider when `git remote get-url origin` contains `github.com`.
 
 ## Prerequisites
 
-The GitHub MCP server must be connected. Run `/mcp` to verify — `github` should show as `connected`. If not connected, see `docs/mcp-config.md`.
+The `gh` CLI must be installed and authenticated. Verify with:
+
+```bash
+gh auth status
+```
+
+If not authenticated, the user needs to run `gh auth login` or set the `GITHUB_TOKEN` environment variable.
+
+---
+
+## Fetching Issue Details
+
+Fetch the full issue with metadata, labels, milestone, and comments:
+
+```bash
+gh issue view ${ISSUE_NUMBER} --json number,title,body,state,labels,assignees,milestone,comments,projectItems
+```
+
+Extract from the JSON response:
+- `title` — issue title
+- `body` — issue description
+- `state` — OPEN / CLOSED
+- `labels[].name` — existing labels
+- `assignees[].login` — assigned users
+- `milestone.title` — milestone name
+- `comments[].body` — prior discussion and context
+
+---
+
+## Finding Related Issues
+
+Find issues in the same milestone:
+
+```bash
+gh issue list --milestone "${MILESTONE}" --json number,title,state,labels --limit 20
+```
+
+Find issues with the same label:
+
+```bash
+gh issue list --label "${LABEL}" --json number,title,state --limit 20
+```
+
+Search by keyword from the issue body:
+
+```bash
+gh issue list --search "${KEYWORD}" --json number,title,state --limit 10
+```
 
 ---
 
 ## Posting the Elaboration
 
-### Option A — GitHub MCP (preferred)
+The original issue body is **never modified**. All analysis is posted as **separate comments** — one per aspect. This preserves the author's description and creates a reviewable discussion thread.
 
-**Update the issue body with the elaborated requirement:**
+### Comment Order
 
-Use `mcp__github__update_issue` with:
-- `issue_number`: the issue number
-- `body`: the full compiled elaboration report
+Post each aspect as its own comment using `gh issue comment`. Each comment must have a clear heading so the thread is scannable.
 
-**Apply verdict label:**
+| # | Comment | Heading | Source |
+|---|---------|---------|--------|
+| 1 | Summary & Verdict | `## 📋 Elaboration Summary` | Orchestrator (compiled) |
+| 2 | Intent & User Context | `## 🔍 Intent & User Context` | intent-analyst |
+| 3 | User Journey | `## 🗺️ User Journey` | journey-mapper |
+| 4 | Personas | `## 👥 Personas` | persona-analyst |
+| 5 | Domain Context | `## 🏢 Domain Context` | domain-analyst |
+| 6 | Gaps, Risks & Dependencies | `## ⚠️ Gaps, Risks & Dependencies` | gap-risk-analyst |
 
-Use `mcp__github__add_labels_to_issue` with:
-- `issue_number`: the issue number
-- `labels`: mapped from the verdict:
+**Skip** comments 3 (Journey) and 4 (Personas) if the sub-agent found nothing relevant (e.g., a narrow bug fix with a single obvious persona).
 
-  | Plugin verdict | GitHub label |
-  |---|---|
-  | `GROOMED` | `groomed` |
-  | `NEEDS CLARIFICATION` | `needs-clarification` |
-  | `NEEDS DECOMPOSITION` | `needs-decomposition` |
-
-**Post unresolved questions as comments:**
-
-For each unresolved question, use `mcp__github__create_issue_comment` with:
-- `issue_number`: the issue number
-- `body`: the question text, tagging the relevant person with `@`
-
-### Option B — `gh` CLI (fallback if MCP is unavailable)
-
-**Update the issue body:**
+### Posting each comment
 
 ```bash
-gh issue edit <issue-number> --body "<elaboration>"
+gh issue comment ${ISSUE_NUMBER} --body "${COMMENT_BODY}"
 ```
 
-**Add labels:**
+For multi-line content, use a heredoc:
 
 ```bash
-gh issue edit <issue-number> --add-label "groomed"
+gh issue comment ${ISSUE_NUMBER} --body "$(cat <<'EOF'
+## 📋 Elaboration Summary
+
+${SUMMARY_CONTENT}
+EOF
+)"
 ```
 
-**Post comments:**
+---
+
+## Applying the Verdict Label
+
+After posting all comments, apply the verdict label:
 
 ```bash
-gh issue comment <issue-number> --body "<question>"
+gh issue edit ${ISSUE_NUMBER} --add-label "${VERDICT_LABEL}"
+```
+
+| Plugin verdict | GitHub label |
+|---|---|
+| `GROOMED` | `groomed` |
+| `NEEDS CLARIFICATION` | `needs-clarification` |
+| `NEEDS DECOMPOSITION` | `needs-decomposition` |
+
+---
+
+## Posting Unresolved Questions
+
+If the gap-risk-analyst identified unresolved questions, post each as a **separate comment** after the analysis comments, tagging the relevant person:
+
+```bash
+gh issue comment ${ISSUE_NUMBER} --body "❓ **Unresolved Question**
+
+${QUESTION_TEXT} — @${PERSON}"
 ```
 
 ---
@@ -78,5 +141,5 @@ git remote get-url origin
 On completion:
 
 ```
-Elaboration posted on issue #<number>: <verdict> — <N> acceptance criteria — <N> unresolved questions
+Elaboration posted on issue #<number>: <verdict> — <N> comments — <N> unresolved questions
 ```

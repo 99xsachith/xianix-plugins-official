@@ -1,12 +1,12 @@
-# Backlog Setup — Using GitHub Issues
+# Backlog Setup
 
-The `req-analyst` plugin uses GitHub Issues as the backlog source. This guide explains how to structure your issues for best results with the agent.
+The `req-analyst` plugin works with **GitHub Issues** and **Azure DevOps Work Items**. This guide explains how to structure your backlog items for best results.
 
 ---
 
-## Issue Structure
+## Item Structure
 
-The agent works with any issue format, but produces better elaborations when the original issue includes:
+The agent works with any format, but produces better elaborations when the original item includes:
 
 ### Minimum (title only)
 The agent can elaborate from just a title, but will flag many gaps:
@@ -45,45 +45,60 @@ Users should be able to view and edit their profile information.
 
 ---
 
-## Labels
+## Labels & Tags
 
-The agent applies these labels automatically based on its analysis:
+The agent applies verdict labels/tags automatically based on its analysis:
 
-| Label | Meaning |
-|---|---|
-| `groomed` | Fully elaborated, ready for sprint planning |
-| `needs-clarification` | Questions posted, awaiting product owner response |
-| `needs-decomposition` | Too large, should be split into smaller items |
+| Verdict | GitHub label | Azure DevOps tag |
+|---|---|---|
+| Fully elaborated, ready for sprint planning | `groomed` | `groomed` |
+| Questions posted, awaiting response | `needs-clarification` | `needs-clarification` |
+| Too large, should be split | `needs-decomposition` | `needs-decomposition` |
 
-You may want to create these labels in your repository beforehand. The agent will create them if they don't exist (requires repo admin permissions).
+**GitHub:** You may want to create these labels in your repository beforehand. The agent will create them if they don't exist (requires repo admin permissions).
+
+**Azure DevOps:** Tags are created automatically — no setup needed.
 
 ---
 
-## Issue Types
+## Item Types
 
-The agent auto-detects the item type from labels or content:
+The agent auto-detects the item type from labels/tags or content:
 
-| Type | Detection | Elaboration Focus |
-|---|---|---|
-| **Story** | Label `story` or `feature`, or describes user behavior | User-facing AC, personas, UI/UX edge cases |
-| **Task** | Label `task` or `chore`, or describes technical work | Technical AC, infrastructure dependencies |
-| **Bug** | Label `bug`, or describes broken behavior | Reproduction steps, expected vs actual, regression AC |
-| **Spike** | Label `spike` or `research`, or describes investigation | Research questions, success criteria, time-box |
+| Type | GitHub detection | Azure DevOps detection | Elaboration Focus |
+|---|---|---|---|
+| **Story** | Label `story` or `feature` | Work item type `User Story` | Personas, user journey, UX edge cases |
+| **Task** | Label `task` or `chore` | Work item type `Task` | Dependencies, scope clarity |
+| **Bug** | Label `bug` | Work item type `Bug` | Reproduction steps, expected vs actual |
+| **Spike** | Label `spike` or `research` | Work item type `Task` + tag `spike` | Research questions, success criteria, time-box |
 
 ---
 
 ## Workflow
 
+### GitHub
+
 1. Create a GitHub issue with at least a title and brief description
 2. Run `/requirement-analysis <issue-number>`
-3. The agent elaborates the issue and posts the result
-4. Product owner reviews the elaboration:
+3. The agent posts analysis as comments on the issue
+4. Product owner reviews:
    - If `GROOMED` — move to sprint planning
    - If `NEEDS CLARIFICATION` — answer the posted questions, then re-run
    - If `NEEDS DECOMPOSITION` — split into smaller issues and elaborate each
 
+### Azure DevOps
+
+1. Create a work item (User Story, Bug, or Task) with at least a title
+2. Run `/requirement-analysis <work-item-id>`
+3. The agent posts analysis as comments on the work item
+4. Same review flow as above
+
 ---
 
-## Future Sources
+## Platform Support
 
-This plugin currently supports GitHub Issues. Support for Jira and Azure DevOps Boards is planned for a future release. The agent's sub-agents are source-agnostic — only the orchestrator's fetch and post steps need to be adapted for new sources.
+| Platform | Fetch items | Post results | Find related items |
+|---|---|---|---|
+| **GitHub** | `gh` CLI (`gh issue view`) | Comments via `gh` CLI | By milestone/labels |
+| **Azure DevOps** | REST API (`curl`) | Comments via REST | By iteration path (WIQL) |
+| **Generic** | User-provided | Written to file | Manual |
