@@ -18,8 +18,9 @@ A curated directory of high-quality plugins for [Xianix the-agent](https://opens
 
 | Plugin | Version | Description | Category |
 |--------|---------|-------------|----------|
-| [pr-reviewer](./plugins/pr-reviewer) | 1.1.0 | Comprehensive PR review with specialized agents for code quality, security, test coverage, and performance analysis. Works with GitHub, Azure DevOps, Bitbucket, and any git repository. | code-review |
-| [req-analyst](./plugins/req-analyst) | 1.0.0 | Requirement grooming plugin focused on user experience. Analyzes user intent, domain knowledge, competitive context, and workflow to produce well-understood, groomed requirements. | requirements |
+| [pr-reviewer](./plugins/pr-reviewer) | 1.2.0 | Comprehensive PR review with specialized agents for code quality, security, test coverage, and performance analysis. Works with GitHub, Azure DevOps, Bitbucket, and any git repository. | code-review |
+| [req-analyst](./plugins/req-analyst) | 1.1.0 | Requirement grooming plugin focused on user experience. Analyzes user intent, domain knowledge, competitive context, and workflow to produce well-understood, groomed requirements. | requirements |
+| [doc-writer](./plugins/doc-writer) | 1.0.0 | Keeps documentation synchronized with code changes. Inspects PR diffs, maps modified source files to `Docs/`, `docs/`, and `README` files, then generates and commits the necessary updates. Supports GitHub and Azure DevOps with label-driven activation via `ai-dlc/pr/update-docs`. | documentation |
 
 ---
 
